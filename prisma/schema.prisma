@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Buku {
+  isbn        String       @id
+  judul       String
+  penulis     String
+  tahunTerbit Int          @map("tahun_terbit")
+  penerbit    String?
+  hal         String
+  genre       Genre
+  sinopsis    String?
+  stok        Int
+  status      stat_buku
+  keterangan  ket_buku
+  linkGambar  String       @map("link_gambar")
+  formBukti   FormBukti[]
+  peminjaman  Peminjaman[]
+}
+
+model Denda {
+  peminjamanIdPeminjaman String
+  peminjamanIsbn         String
+  peminjamanNis          String
+  peminjamanNip          String
+  ket                    ket_denda
+  status                 stat_denda
+  jumlah                 Jumlah
+  Peminjaman             Peminjaman @relation(fields: [peminjamanIdPeminjaman, peminjamanIsbn, peminjamanNis, peminjamanNip], references: [idPeminjaman, bukuIsbn, siswaNis, guruNip])
+
+  @@id([peminjamanIdPeminjaman, peminjamanIsbn, peminjamanNis, peminjamanNip])
+}
+
+model FormBukti {
+  idBukti  String     @id
+  siswaNis String
+  bukuIsbn String
+  status   stat_bukti
+  intisari String
+  tanggal  DateTime
+  halBuku  String
+  Buku     Buku       @relation(fields: [bukuIsbn], references: [isbn])
+  Siswa    Siswa      @relation(fields: [siswaNis], references: [nis])
+}
+
+model Guru {
+  nip          String       @id
+  nama         String
+  jenisKelamin jk
+  kontak       String
+  alamat       String
+  peminjaman   Peminjaman[]
+}
+
+model LaporanPerpus {
+  idLaporan     String
+  idPeminjaman  String
+  idPetugas     String
+  isbn          String
+  nis           String
+  nip           String
+  tanggal       DateTime
+  PetugasPerpus PetugasPerpus @relation(fields: [idPetugas], references: [idPetugas])
+  Peminjaman    Peminjaman    @relation(fields: [isbn, idPeminjaman, nis, nip], references: [bukuIsbn, idPeminjaman, siswaNis, guruNip])
+
+  @@id([idLaporan, isbn, idPeminjaman, nis, nip])
+}
+
+model Peminjaman {
+  idPeminjaman        String
+  bukuIsbn            String
+  siswaNis            String
+  guruNip             String
+  tanggalPinjam       DateTime
+  tanggalPengembalian DateTime
+  keterangan          String
+  denda               Denda?
+  laporan             LaporanPerpus[]
+  Buku                Buku            @relation(fields: [bukuIsbn], references: [isbn])
+  Guru                Guru            @relation(fields: [guruNip], references: [nip])
+  Siswa               Siswa           @relation(fields: [siswaNis], references: [nis])
+
+  @@id([bukuIsbn, idPeminjaman, siswaNis, guruNip])
+}
+
+model PetugasPerpus {
+  idPetugas String          @id
+  nama      String
+  laporan   LaporanPerpus[]
+}
+
+model Siswa {
+  nis          String       @id
+  nama         String
+  jenisKelamin jk
+  kontakOrtu   String
+  formBukti    FormBukti[]
+  peminjaman   Peminjaman[]
+  idKelas      String
+  kelas        Kelas        @relation(fields: [idKelas], references: [id])
+}
+
+model Kelas {
+  id    String  @id
+  nama  String
+  siswa Siswa[]
+}
+
+enum jk {
+  Laki_Laki
+  Perempuan
+}
+
+enum Genre {
+  FANTASY
+  SCIFI
+  MYSTERY
+  BIOGRAPHY
+  HISTORY
+  ROMANCE
+  OTHER
+}
+
+enum stat_buku {
+  Tersedia
+  Habis
+}
+
+enum ket_buku {
+  Sumbangan
+  Denda
+}
+
+enum stat_denda {
+  Dibayar
+  Belum_Dibayar
+}
+
+enum ket_denda {
+  Terlambat
+  Hilang
+  Rusak
+}
+
+enum stat_bukti {
+  Disetujui
+  Tidak_Disetujui
+}
+
+enum Jumlah {
+  Rp500
+  Rp110000
+  Dua_Buku
+}
